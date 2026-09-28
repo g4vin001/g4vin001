@@ -24,8 +24,10 @@ Recognition accuracy is not yet measured. The [benchmark runner](docs/benchmark.
 - No paid calls without a server-side provider key.
 - No full audio/video persistence; scan plans and results expire after seven days.
 - Duplicate and cached requests do not blindly issue new provider calls.
-- Global, visitor and network allowances are reserved in an atomic SQL statement.
+- Global, visitor and network allowances are reserved in an atomic SQL statement. A persistent cumulative ceiling starts at 300 provider reservations and survives request-history cleanup.
 - Saved finds are isolated by an anonymous browser identifier.
 - Survey and continuous scans show real checked coverage, gaps and unresolved sections. The tab must remain open while processing; reselect the original file to resume.
 - Direct social page extraction is not included. Local files are limited to 40 MB / 20 minutes and the remaining request allowance.
+- Single-song recognition is free to visitors when activated. Provider fees are operating costs, not a per-song customer checkout.
+- AdSense ownership metadata and ads.txt are ready for a real publisher ID; ad serving still requires account approval and consent configuration.
 - No ad or payment credentials are invented; those surfaces remain disabled until configured.

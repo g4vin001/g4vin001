@@ -36,7 +36,8 @@ export async function reserve(args:{ id:string; kind:string; owner:string; ip:st
  WHERE (SELECT COUNT(*) FROM operations WHERE kind=? AND created>?)<?
  AND (SELECT COUNT(*) FROM operations WHERE owner=? AND kind=? AND created>?)<?
  AND (SELECT COUNT(*) FROM operations WHERE ip=? AND kind=? AND created>?)<?
- ON CONFLICT(id) DO NOTHING RETURNING id`).bind(args.id,args.kind,args.owner,args.ip,args.digest,now(),args.kind,cutoff,args.global,args.owner,args.kind,cutoff,args.user,args.ip,args.kind,cutoff,args.perIP).first();
+ AND (?<>'recognize' OR COALESCE((SELECT used FROM recognition_meter WHERE id='global'),0)<?)
+ ON CONFLICT(id) DO NOTHING RETURNING id`).bind(args.id,args.kind,args.owner,args.ip,args.digest,now(),args.kind,cutoff,args.global,args.owner,args.kind,cutoff,args.user,args.ip,args.kind,cutoff,args.perIP,args.kind,intVariable('TOTAL_SCAN_LIMIT',300,1000000)).first();
  return !!r;
 }
 export async function cleanup() {

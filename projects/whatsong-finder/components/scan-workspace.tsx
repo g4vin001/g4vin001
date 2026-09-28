@@ -130,7 +130,7 @@ export function ScanWorkspace({ audio, sourceURL, fileHash, filename, configurat
   }
   const selectedSegment = job?.segments.find(s => s.index === selected);
   return <section className="section scan-workspace" id="scan" aria-label="Video song timeline">
-    <div className="section-head"><div><span className="eyebrow">Music throughout a recording</span><h2>Build a song timeline</h2></div><span className="pill"><AudioLines size={15}/>{remaining} scans available</span></div>
+    <div className="section-head"><div><span className="eyebrow">Music throughout a recording</span><h2>Build a song timeline</h2></div><span className="pill"><AudioLines size={15}/>{remaining} free scans available</span></div>
     <div className="scan-layout">
       <div className="panel scan-planner">
         <div className="row between"><h3>Plan a scan</h3><button className="btn ghost" onClick={onChooseFile} disabled={locked || loading}><FolderOpen size={16}/>{audio ? 'Change file' : 'Choose file'}</button></div>

@@ -15,6 +15,13 @@
       "when": 1790566317874,
       "tag": "0001_small_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790619856768,
+      "tag": "0002_fixed_susan_delgado",
+      "breakpoints": true
     }
   ]
 }

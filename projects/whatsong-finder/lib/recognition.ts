@@ -6,7 +6,12 @@ export class RecognitionError extends Error {
   constructor(public code: string, public status: number, message: string) { super(message); }
 }
 export function recognitionReady() {
-  return !!variable('AUDD_API_TOKEN') && variable('AUDD_API_TOKEN') !== 'test' && intVariable('GLOBAL_DAILY_SCAN_LIMIT', 100, 10000) > 0;
+  const token = variable('AUDD_API_TOKEN').trim();
+  return !!token && token !== 'test' && intVariable('GLOBAL_DAILY_SCAN_LIMIT', 100, 10000) > 0 && intVariable('TOTAL_SCAN_LIMIT', 300, 1000000) > 0;
+}
+export async function totalBudgetRemaining() {
+  const row = await db().prepare("SELECT used FROM recognition_meter WHERE id='global'").first<{ used: number }>();
+  return Math.max(0, intVariable('TOTAL_SCAN_LIMIT', 300, 1000000) - (row?.used || 0));
 }
 export function assertRecognitionReady() {
   if (!recognitionReady()) throw new RecognitionError('PROVIDER_NOT_CONFIGURED', 503, 'Audio identification is awaiting activation. You can prepare a clip or plan a scan.');
@@ -17,7 +22,7 @@ export async function allowance(owner: string, ip: string): Promise<ScanAllowanc
     COALESCE(SUM(CASE WHEN ip=? THEN 1 ELSE 0 END),0) AS network
     FROM operations WHERE kind='recognize' AND created>?`).bind(owner, ip, now() - 86400).first<{ total: number; visitor: number; network: number }>();
   const limit = intVariable('VISITOR_DAILY_SCAN_LIMIT', 5, 200);
-  return { limit, remaining: Math.max(0, Math.min(limit - (counts?.visitor || 0), intVariable('IP_DAILY_SCAN_LIMIT', 20, 500) - (counts?.network || 0), intVariable('GLOBAL_DAILY_SCAN_LIMIT', 100, 10000) - (counts?.total || 0))) };
+  return { limit, remaining: Math.max(0, Math.min(limit - (counts?.visitor || 0), intVariable('IP_DAILY_SCAN_LIMIT', 20, 500) - (counts?.network || 0), intVariable('GLOBAL_DAILY_SCAN_LIMIT', 100, 10000) - (counts?.total || 0), await totalBudgetRemaining())) };
 }
 
 export async function recognize(input: RecognitionInput, who: { owner: string; ip: string }, requestId: string, sampleAt = 0): Promise<ScanResult> {
@@ -41,11 +46,11 @@ export async function recognize(input: RecognitionInput, who: { owner: string; i
   }
   const accepted = await reserve({ id: operation, kind: 'recognize', owner: who.owner, ip: who.ip, digest: hash,
     global: intVariable('GLOBAL_DAILY_SCAN_LIMIT', 100, 10000), user: intVariable('VISITOR_DAILY_SCAN_LIMIT', 5, 200), perIP: intVariable('IP_DAILY_SCAN_LIMIT', 20, 500), window: 86400 });
-  if (!accepted) throw new RecognitionError('QUOTA_EXCEEDED', 429, 'The scan allowance is currently used up. Saved progress is kept; try again when the rolling 24-hour allowance recovers.');
+  if (!accepted) throw new RecognitionError('QUOTA_EXCEEDED', 429, 'The free allowance or shared site budget is used up. Saved progress is kept. Personal allowances recover over 24 hours; the site budget may need replenishing.');
   const began = Date.now();
   let result: ScanResult;
   try {
-    const song = await new AudDRecognizer(variable('AUDD_API_TOKEN')).recognize(input);
+    const song = await new AudDRecognizer(variable('AUDD_API_TOKEN').trim()).recognize(input);
     result = { song: song ? { ...song, sampleAt } : null, cached: false, provider: 'audd', providerCalls: 1, latencyMs: Date.now() - began };
     // Record the answer before caching or saving. Replaying a lost response must not bill twice.
     await db().prepare('UPDATE operations SET response=? WHERE id=?').bind(JSON.stringify(result), operation).run();
