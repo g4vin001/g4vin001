@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "clean-001",
+      "file": "clips/clean-001.wav",
+      "group": "clean",
+      "expected": { "title": "Replace with verified title", "artist": "Replace with verified artist" }
+    },
+    {
+      "id": "speech-001",
+      "file": "clips/speech-001.wav",
+      "group": "speech-over-music",
+      "expected": { "title": "Replace with verified title", "artist": "Replace with verified artist" }
+    },
+    {
+      "id": "negative-001",
+      "file": "clips/negative-001.wav",
+      "group": "no-music",
+      "expected": null
+    }
+  ]
+}

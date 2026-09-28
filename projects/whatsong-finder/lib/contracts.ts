@@ -6,7 +6,7 @@ export const SongSchema = z.object({
   source: z.enum(['recognition','catalog']), sampleAt: z.number().min(0).max(7200).optional(),
 });
 export type Song = z.infer<typeof SongSchema>;
-export type Configuration = { recognition: boolean; dailyLimit: number; maxFileMB: number; supportUrl: string | null; sponsor: { label: string; url: string; description: string } | null };
+export type Configuration = { recognition: boolean; dailyLimit: number; remainingScans: number; maxFileMB: number; supportUrl: string | null; sponsor: { label: string; url: string; description: string } | null };
 export function safeLink(value: unknown, hosts?: string[]): string | undefined {
   if (typeof value !== 'string' || value.length > 1500) return undefined;
   try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password && (!hosts || hosts.some(h => u.hostname === h || u.hostname.endsWith('.'+h))) ? u.href : undefined; } catch { return undefined; }
@@ -37,4 +37,16 @@ export function parsePCM(bytes: ArrayBuffer): number {
   return duration;
 }
 export function secondsLabel(v:number) { return `${Math.floor(v/60)}:${String(Math.floor(v%60)).padStart(2,'0')}`; }
+export function pcmPeak(bytes: ArrayBuffer): number {
+  const view = new DataView(bytes); let peak = 0;
+  for (let offset = 12; offset + 8 <= bytes.byteLength;) {
+    const length = view.getUint32(offset + 4, true);
+    if (offset + 8 + length > bytes.byteLength) break;
+    if (view.getUint32(offset, false) === 0x64617461) {
+      for (let i = offset + 8; i + 1 < offset + 8 + length; i += 2) peak = Math.max(peak, Math.abs(view.getInt16(i, true)) / 32768);
+    }
+    offset += 8 + length + (length % 2);
+  }
+  return peak;
+}
 export function csvCell(v:string|number) { const s=String(v); return '"'+(/^[=+\-@\t\r]/.test(s)?"'"+s:s).replaceAll('"','""')+'"'; }
